@@ -14,7 +14,7 @@ async function runTests() {
   // Importando diretamente dos fontes usando tsx
   const { initDb, closeDb } = await import("../src/services/db.service.js");
   const { filterNewJobs } = await import("../src/utils/filters.js");
-  const { isDeveloperJob, hasLevel } = await import("../src/services/gupy.service.js");
+  const { isDeveloperJob, hasLevel, hasExcludedLevel } = await import("../src/services/gupy.service.js");
 
   console.log("🔍 Testando filtro de desenvolvedor e nível...");
   const job1 = { id: "a", title: "Desenvolvedor Jr", company: "A", location: "Remoto", url: "" };
@@ -23,6 +23,7 @@ async function runTests() {
 
   const devFilters = ["desenvolvedor", "desenvolvedora", "developer", "dev"];
   const levelFilters = ["jr", "junior", "júnior", "pl", "pleno"];
+  const excludeLevelFilters = ["sr", "sênior", "senior", "especialista", "specialist"];
 
   assert.equal(isDeveloperJob(job1, devFilters), true);
   assert.equal(hasLevel(job1, levelFilters), true);
@@ -30,7 +31,11 @@ async function runTests() {
   assert.equal(hasLevel(job2, levelFilters), true);
   assert.equal(isDeveloperJob(job3, devFilters), false);
 
-  console.log("✅ isDeveloperJob/hasLevel: regras de filtro funcionam");
+  const job4 = { id: "d", title: "Desenvolvedor Sênior", company: "D", location: "Remoto", url: "" };
+  assert.equal(hasExcludedLevel(job4, excludeLevelFilters), true);
+  assert.equal(hasExcludedLevel(job1, excludeLevelFilters), false);
+
+  console.log("✅ isDeveloperJob/hasLevel/hasExcludedLevel: regras de filtro funcionam");
 
   process.env.SQLITE_FILE = TEST_DB_PATH;
   if (fs.existsSync(TEST_DB_PATH)) fs.unlinkSync(TEST_DB_PATH);

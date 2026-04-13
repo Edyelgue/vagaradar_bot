@@ -13,7 +13,7 @@ VagaRadar é uma ferramenta Node.js + TypeScript para buscar vagas de desenvolve
 - dotenv
 
 ## 🧩 Arquitetura
-1. `src/services/gupy.service.ts`: consome endpoint Gupy `/api/v1/jobs` com query params e filtros padrão (dev + nível + remoto).
+1. `src/services/gupy.service.ts`: consome endpoint Gupy `/api/v1/jobs` com query params e filtros padrão (dev + nível + exclusão de níveis + localização).
 2. `src/utils/filters.ts`: checa se vaga já foi processada (memória + SQLite) e retorna somente vagas novas.
 3. `src/jobs/fetchJobs.job.ts`: executa fetch + filtra + dispara webhook interno (`/webhook/new-job`).
 4. `src/webhook.ts`: trata POST interno e:
@@ -29,12 +29,12 @@ TELEGRAM_CHAT_ID=<chat-id>
 KEYWORD=Desenvolvedor
 LIMIT=100
 OFFSET=0
-WORKPLACE_TYPE=remote
 
 LEVEL_FILTERS=jr,junior,júnior,pl,pleno
 DEV_FILTERS=desenvolvedor,desenvolvedora,developer,dev
+EXCLUDE_LEVEL_FILTERS=sr,sênior,senior,especialista,specialist
 REQUIRE_LEVEL=false
-REMOTE_ONLY=true
+REMOTE_ONLY=false
 
 PORT=3000
 WEBHOOK_PORT=3000

@@ -11,6 +11,7 @@ export interface Job {
 
 const DEFAULT_LEVEL_FILTERS = ["jr", "junior", "junior", "júnior", "pl", "pleno"];
 const DEFAULT_DEV_FILTERS = ["desenvolvedor", "desenvolvedora", "developer", "dev"];
+const DEFAULT_EXCLUDE_LEVEL_FILTERS = ["sr", "sênior", "senior", "especialista", "specialist"];
 
 function normalizeText(value: string | undefined): string {
   return (value || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
@@ -30,6 +31,11 @@ export function hasLevel(job: Job, filters: string[]): boolean {
   return containsAny(text, filters);
 }
 
+export function hasExcludedLevel(job: Job, filters: string[]): boolean {
+  const text = normalizeText(`${job.title} ${job.company} ${job.location}`);
+  return containsAny(text, filters);
+}
+
 export function isRemoteJob(job: Job): boolean {
   const text = normalizeText(`${job.title} ${job.location}`);
   return text.includes("remoto") || text.includes("remote") || text.includes("home office") || text.includes("anywhere");
@@ -41,12 +47,13 @@ export async function fetchJobs(): Promise<Job[]> {
     const limit = Number(process.env.LIMIT || 10);
     const offset = Number(process.env.OFFSET || 0);
     const remoteOnly = process.env.REMOTE_ONLY?.toLowerCase() === "true";
-    const workplaceType = process.env.WORKPLACE_TYPE?.trim() || (remoteOnly ? "remote" : undefined);
 
     // Prepara os filtros uma única vez (performance)
     const devFilters = (process.env.DEV_FILTERS || DEFAULT_DEV_FILTERS.join(","))
       .split(",").map(t => normalizeText(t.trim()));
     const levelFilters = (process.env.LEVEL_FILTERS || DEFAULT_LEVEL_FILTERS.join(","))
+      .split(",").map(t => normalizeText(t.trim()));
+    const excludeLevelFilters = (process.env.EXCLUDE_LEVEL_FILTERS || DEFAULT_EXCLUDE_LEVEL_FILTERS.join(","))
       .split(",").map(t => normalizeText(t.trim()));
 
     const requireLevel = process.env.REQUIRE_LEVEL?.toLowerCase() === "true";
@@ -59,10 +66,6 @@ export async function fetchJobs(): Promise<Job[]> {
       sortBy: "publishedDate",
       sortOrder: "desc",
     };
-
-    if (workplaceType && workplaceType !== "any") {
-      params.workplaceType = workplaceType;
-    }
 
     console.log("fetchJobs params:", params);
 
@@ -110,6 +113,7 @@ export async function fetchJobs(): Promise<Job[]> {
     const filtered = jobs.filter((job) => {
       if (!isDeveloperJob(job, devFilters)) return false;
       if (requireLevel && !hasLevel(job, levelFilters)) return false;
+      if (hasExcludedLevel(job, excludeLevelFilters)) return false;
       if (remoteOnly && !isRemoteJob(job)) return false;
       return true;
     });
